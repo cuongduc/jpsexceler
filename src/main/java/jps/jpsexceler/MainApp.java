@@ -8,7 +8,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
@@ -25,9 +24,18 @@ public class MainApp extends Application {
     
     private ObservableList<Node> allChildren = FXCollections.observableArrayList();
     
+    // Singpleton
+//    private static MainApp instance = null;
+    
     public MainApp() {
         MainApp.dbConnector = new DBConnector();
     }
+    
+//    public static MainApp getInstance() {
+//        if (instance == null)
+//            instance = new MainApp();
+//        return instance;
+//    }
 
     public DBConnector getDbConnector() {
         return dbConnector;
@@ -48,34 +56,16 @@ public class MainApp extends Application {
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(MainApp.class.getResource("/fxml/MainApp.fxml"));
             BorderPane root = (BorderPane) loader.load();
-            
-//            traverse(root);
-////            ObservableList<Node> all = traverse(root);
-//            for (Node item : allChildren) {
-//                System.out.println(item);
-//            }
+            root.getStylesheets().add("/styles/Styles.css");
             // Find the TableViewElement
             Scene scene = new Scene(root);
-//            initDataTableView();
+            
             this.primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
-//    private void traverse(Parent node) {
-//        if (!node.getChildrenUnmodifiable().isEmpty()) {
-//            ObservableList<Node> tempChildren = node.getChildrenUnmodifiable();
-//            allChildren.addAll(tempChildren);
-//            
-//            for (Node n: allChildren) {
-//                traverse((Parent) n);
-//            }
-//        } else {
-//            allChildren.add(node);
-//        }
-//    }
-    
+
     private Node initDataTableView() throws SQLException {
         TableView<KiotProduct> tbKiotProduct = new TableView<>();
         tbKiotProduct.setItems(MainApp.dbConnector.getAllProducts());   

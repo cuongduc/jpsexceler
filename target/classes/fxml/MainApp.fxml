@@ -56,7 +56,8 @@
                            <children>
                               <VBox>
                                  <children>
-                                    <ImageView fx:id="avatar" fitHeight="170.0" fitWidth="287.0" pickOnBounds="true" preserveRatio="true" />
+                                    <ImageView id="product-avatar" fx:id="avatar" fitHeight="170.0" fitWidth="287.0" pickOnBounds="true" preserveRatio="true" />
+                                    <Button fx:id="productPhotoButton" mnemonicParsing="false" onAction="#productPhotoButtonClickedHandler" text="Hình ảnh ..." />
                                     <GridPane VBox.vgrow="ALWAYS">
                                       <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="140.0" minWidth="10.0" prefWidth="104.0" />
@@ -105,7 +106,7 @@
                         </StackPane>
                         <ToolBar nodeOrientation="RIGHT_TO_LEFT" prefHeight="40.0" prefWidth="200.0">
                           <items>
-                            <Button fx:id="productDetailEditButton" mnemonicParsing="false" text="Chỉnh sửa" />
+                            <Button fx:id="productDetailEditButton" mnemonicParsing="false" text="Lưu thay đổi" />
                           </items>
                         </ToolBar>
                      </children>

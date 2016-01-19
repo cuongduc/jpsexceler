@@ -12,7 +12,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -60,6 +62,9 @@ public class FXMLController implements Initializable {
     private StackPane productContainerStackPane;
     
     // Detail panel controls
+    @FXML
+    private Button productPhotoButton;
+    
     @FXML
     private TextField idTextField;
     
@@ -359,5 +364,25 @@ public class FXMLController implements Initializable {
             }
         }
         
+    }
+  
+    /**
+     * When use click on Image... button
+     * shows the PhotoUploader view
+     * 
+     * @param event 
+     */
+    @FXML
+    private void productPhotoButtonClickedHandler(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/PhotoUploader.fxml"));
+            BorderPane photoUploaderRoot = (BorderPane) loader.load();
+            
+            Stage stage = new Stage();
+            stage.setScene(new Scene(photoUploaderRoot));
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
