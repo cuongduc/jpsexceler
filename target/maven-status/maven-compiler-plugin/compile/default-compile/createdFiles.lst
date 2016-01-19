@@ -1,6 +1,8 @@
 jps/jpsexceler/MainApp.class
 jps/model/DBConnector.class
+jps/jpsexceler/FXMLController$RowSelectedChangeListener.class
 jps/model/ExcelReader.class
 jps/jpsexceler/FXMLController.class
 jps/model/KiotProduct.class
+jps/jpsexceler/FXMLController$1.class
 jps/model/ExcelWriter.class

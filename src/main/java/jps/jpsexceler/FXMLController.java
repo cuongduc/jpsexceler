@@ -1,10 +1,13 @@
 package jps.jpsexceler;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.ResourceBundle;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,13 +18,17 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import jps.model.DBConnector;
 import jps.model.ExcelReader;
 import jps.model.ExcelWriter;
 import jps.model.KiotProduct;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -52,6 +59,32 @@ public class FXMLController implements Initializable {
     @FXML
     private StackPane productContainerStackPane;
     
+    // Detail panel controls
+    @FXML
+    private TextField idTextField;
+    
+    @FXML
+    private TextField nameTextField;
+    
+    @FXML
+    private TextField categoryTextField;
+    
+    @FXML
+    private TextField salePriceTextField;
+    
+    @FXML
+    private TextField primeSaleTextField;
+    
+    @FXML
+    private TextField competentPriceTextField;
+    
+    @FXML
+    private TextField inventoryTextField;
+    
+    @FXML
+    private TextField imageTextField;
+    
+    
 //    @FXML
 //    private Button createProductTable;
     
@@ -62,10 +95,15 @@ public class FXMLController implements Initializable {
     }
     
     @FXML
-    private void exportBNCButtonClickedHandler(ActionEvent event) {
+    private void exportBNCButtonClickedHandler(ActionEvent event) throws IOException, InvalidFormatException {
+        FileChooser fc = new FileChooser();
+        File file = fc.showSaveDialog(app.getStage());
+        
+        if (file == null)
+            return;
         ExcelWriter ew = new ExcelWriter();
         ew.createSheet("default");
-        ew.write(kiotProduct, "BNCOutput.xlsx");
+        ew.write(kiotProduct, file.getAbsolutePath());
     }
 //    @FXML
 //    private void createProductTableClickedHandler(ActionEvent event) throws SQLException {
@@ -116,18 +154,44 @@ public class FXMLController implements Initializable {
     }
     
     @FXML
-    private void importFileButtonClickHandler(ActionEvent event) throws IOException {
-        System.out.println("Reading Excel ");
-        readExcel();
-        attachKiotProductTableView();
+    private void importFileButtonClickHandler(ActionEvent event) throws IOException, InvalidFormatException {
+        FileChooser fc = new FileChooser();
+        Stage primaryStage = app.getStage();
+        File in = fc.showOpenDialog(primaryStage);
         
-        for(KiotProduct p : kiotProduct) {
-            System.out.println(p.getId());
-        }
+        if(in == null)
+            return;
+        
+        System.out.println("Reading Excel ");
+        // Reading another file => clear the list, reinitialize
+        clearProductObservableList();
+        removeProductTableView();
+        readExcel(in);
+        attachKiotProductTableView();
+
     }
     
+    private void clearProductObservableList() {
+        this.kiotProduct.clear();
+    }
+    
+    private void removeProductTableView() {
+        this.productContainerStackPane.getChildren().remove(kiotProductTableView);
+    }
+    
+    /**
+     * Attach kiotProductTableView to the product container
+     */
     private void attachKiotProductTableView() {
+        addTableViewListener();
         this.productContainerStackPane.getChildren().add(kiotProductTableView);
+    }
+    
+    /**
+     * Handle when user select on a row
+     */
+    private void addTableViewListener() {
+        kiotProductTableView.getSelectionModel().selectedIndexProperty().addListener(new RowSelectedChangeListener());
     }
     
     @Override
@@ -135,16 +199,20 @@ public class FXMLController implements Initializable {
                 
     }    
     
-    public void readExcel() throws IOException {
-        eReader = new ExcelReader();
+    public void readExcel(File in) throws IOException, InvalidFormatException {
+        eReader = new ExcelReader(in);
         wb = eReader.getWorkbook();
-
+        
         initKiotProductTableView();
         
     }
     
     private void initKiotProductTableView() {
-        initKiotProductTableViewColums();
+        if (!productContainerStackPane.getChildren().contains(kiotProductTableView)) {
+            initKiotProductTableViewColums();
+        } else {
+            kiotProductTableView.getItems().setAll(populateTableViewRows());
+        }
     }
     
     private void initKiotProductTableViewColums() {
@@ -272,5 +340,24 @@ public class FXMLController implements Initializable {
         }
         return kiotProduct;
 
+    }
+    
+    private class RowSelectedChangeListener implements ChangeListener {
+        
+        @Override
+        public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+            KiotProduct p = (KiotProduct)kiotProductTableView.getSelectionModel().getSelectedItem();
+            if (p != null) {
+                idTextField.setText(p.getId());
+                nameTextField.setText(p.getName());
+                categoryTextField.setText(p.getCategory());
+                salePriceTextField.setText(p.getSalePrice().toString());
+                primeSaleTextField.setText(p.getPrimePrice().toString());
+//                competentPriceTextField.setText(p.getCo);
+                inventoryTextField.setText(p.getInventory().toString());
+                imageTextField.setText(p.getImage());
+            }
+        }
+        
     }
 }

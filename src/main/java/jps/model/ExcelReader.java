@@ -5,9 +5,11 @@
  */
 package jps.model;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -30,6 +32,10 @@ public class ExcelReader {
     public ExcelReader() throws IOException {
         in = ExcelReader.class.getResourceAsStream(INPUT_EXCEL_FILE);
         
+        this.workbook = new XSSFWorkbook(in);
+    }
+    
+    public ExcelReader(File in) throws IOException, InvalidFormatException {
         this.workbook = new XSSFWorkbook(in);
     }
 

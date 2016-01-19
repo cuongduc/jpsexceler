@@ -10,6 +10,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 /**
  *
@@ -99,7 +101,6 @@ public class DBConnector {
         statement = connection.createStatement();
 
         String sql = "SELECT * FROM products WHERE id = '" + p.getId() + "' AND id != ''";
-        System.out.println(sql);
         return statement.executeQuery(sql);
     }
     
@@ -134,8 +135,6 @@ public class DBConnector {
                                  p.getImeiUsed() + "'," +
                                  p.getWeight() +
                       ")";
-        System.out.println(sql);
-//        Statement stmt = connection.prepareStatement(sql);
         return statement.execute(sql);
     }
     
@@ -168,8 +167,51 @@ public class DBConnector {
                        + "imeiUsed = " + p.getImeiUsed() + ","
                        + "weight = " + p.getWeight() 
                        + " WHERE id = '" + p.getId() + "';";
-        System.out.println(sql);
-//        Statement stmt = connection.prepareStatement(sql);
         return statement.execute(sql);
+    }
+    
+    // Get all product in database
+    public ObservableList<KiotProduct> getAllProducts() throws SQLException {
+        // query for all products
+        ResultSet productsRS = queryAllProducts();
+        return convertToObservableProductList(productsRS);
+    }
+    
+    private ResultSet queryAllProducts() throws SQLException {
+        statement = connection.createStatement();
+        
+        String sql = "SELECT * FROM products";
+        
+        return statement.executeQuery(sql);
+    }
+    
+    public ObservableList<KiotProduct> convertToObservableProductList(ResultSet rs) throws SQLException {
+        ObservableList<KiotProduct> list = FXCollections.observableArrayList();
+        while(rs.next()) {
+            KiotProduct p = new KiotProduct(
+                    rs.getString("productType"),
+                    rs.getString("category"),
+                    rs.getString("id"),
+                    rs.getString("name"),
+                    rs.getDouble("primePrice"),
+                    rs.getDouble("salePrice"),
+                    rs.getDouble("inventory"),
+                    rs.getDouble("minInventory"),
+                    rs.getDouble("maxInventory"),
+                    rs.getString("unit"),
+                    rs.getString("basicUnit"),
+                    rs.getDouble("conversionRate"),
+                    rs.getString("properties"),
+                    rs.getString("relatedProduct"),
+                    rs.getString("image"),
+                    rs.getDouble("imeiUsed"),
+                    rs.getDouble("weight")
+                    
+            );
+            
+            list.add(p);
+        }
+        
+        return list;
     }
 }

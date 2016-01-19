@@ -16,6 +16,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import javafx.collections.ObservableList;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -35,6 +36,11 @@ public class ExcelWriter {
     
     public ExcelWriter() {
         this.workbook = new XSSFWorkbook();
+        this.productData = new TreeMap<>();
+    }
+    
+    public ExcelWriter(File f) throws IOException, InvalidFormatException {
+        this.workbook = new XSSFWorkbook(f);
         this.productData = new TreeMap<>();
     }
     
