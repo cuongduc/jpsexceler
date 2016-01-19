@@ -2,6 +2,7 @@ package jps.jpsexceler;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
@@ -9,18 +10,25 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import jps.model.DBConnector;
 import jps.model.ExcelReader;
+import jps.model.ExcelWriter;
 import jps.model.KiotProduct;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class FXMLController implements Initializable {
+    
+    private final MainApp app;
     
     private ExcelReader eReader;
     
@@ -35,18 +43,91 @@ public class FXMLController implements Initializable {
     @FXML
     private Button importFileButton;
     
+    @FXML
+    private Button synchronizeDataButton;
+    
+    @FXML
+    private Button exportBNCButton;
+    
+    @FXML
+    private StackPane productContainerStackPane;
+    
+//    @FXML
+//    private Button createProductTable;
+    
     private final TableView<KiotProduct> kiotProductTableView = new TableView<>();
+    
+    public FXMLController() {
+        this.app = new MainApp();
+    }
+    
+    @FXML
+    private void exportBNCButtonClickedHandler(ActionEvent event) {
+        ExcelWriter ew = new ExcelWriter();
+        ew.createSheet("default");
+        ew.write(kiotProduct, "BNCOutput.xlsx");
+    }
+//    @FXML
+//    private void createProductTableClickedHandler(ActionEvent event) throws SQLException {
+//        DBConnector conn = this.app.getDbConnector();
+//        try {
+//        Integer flag = conn.createProductsTable();
+//        if (flag == Statement.EXECUTE_FAILED) {
+//            Alert errorAlert = new Alert(AlertType.ERROR);
+//            errorAlert.setTitle("JPS Exceler Error");
+//            errorAlert.setHeaderText("Database error");
+//            errorAlert.setContentText("Oops, there was error why trying to create Products table");
+//            errorAlert.showAndWait();
+//        } else {
+//            Alert errorAlert = new Alert(AlertType.INFORMATION);
+//            errorAlert.setTitle("JPS Exceler");
+//            errorAlert.setHeaderText("Database Information");
+//            errorAlert.setContentText("'Products' table was successfully created!");
+//            errorAlert.showAndWait();
+//        }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        } finally {
+//            conn.close();
+//        }
+//    }
+    
+    @FXML
+    private void synchronizeDataButtonClickedHandler(ActionEvent event) throws SQLException {
+        System.out.println("Synchronize data");
+        DBConnector db = MainApp.dbConnector;
+        boolean flag = true;
+        for (KiotProduct p : kiotProduct) {
+            if (!db.synchronizeProduct(p))
+                flag = false;
+                
+        }
+        if (flag == true) {
+            Alert info = new Alert(AlertType.INFORMATION);
+            info.setTitle("JPS Exceler");
+            info.setHeaderText("Đồng bộ dữ liệu");
+            info.setContentText("Đồng bộ dữ liệu thành công");
+        } else {
+            Alert info = new Alert(AlertType.INFORMATION);
+            info.setTitle("JPS Exceler");
+            info.setHeaderText("Đồng bộ dữ liệu");
+            info.setContentText("Đẫ có lỗi xảy ra trong quá trình đồng bộ dữ liệu. Xin hãy kiểm tra lại");
+        }
+    }
     
     @FXML
     private void importFileButtonClickHandler(ActionEvent event) throws IOException {
         System.out.println("Reading Excel ");
         readExcel();
         attachKiotProductTableView();
-
+        
+        for(KiotProduct p : kiotProduct) {
+            System.out.println(p.getId());
+        }
     }
     
     private void attachKiotProductTableView() {
-        this.rootLayoutBorderPane.setCenter(kiotProductTableView);
+        this.productContainerStackPane.getChildren().add(kiotProductTableView);
     }
     
     @Override
@@ -86,7 +167,7 @@ public class FXMLController implements Initializable {
         nameCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("name"));
         
         TableColumn primeCostCol = new TableColumn("Giá vốn");
-        primeCostCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("primeCost"));
+        primeCostCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("primePrice"));
         
         TableColumn salePriceCol = new TableColumn("Giá bán");
         salePriceCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("salePrice"));
@@ -140,34 +221,53 @@ public class FXMLController implements Initializable {
         
         while (rowIterator.hasNext()) {
             Row row = rowIterator.next();
-            
+
             // Ignore the header
             if (row.getRowNum() == 0)
                 continue;
             
-            String lproductType = row.getCell(0).getStringCellValue();
-            String lcategory = row.getCell(1).getStringCellValue();
-            String lid = row.getCell(2).getStringCellValue();
-            String lname = row.getCell(3).getStringCellValue();
-            Double lprimeCost = row.getCell(4).getNumericCellValue();
-            Double lsalePrice = row.getCell(5).getNumericCellValue();
-            Double linventory = row.getCell(6).getNumericCellValue();
-            Double lminInventory = row.getCell(7).getNumericCellValue();
-            Double lmaxInventory = row.getCell(8).getNumericCellValue();
-            String lunit = row.getCell(9).getStringCellValue();
-            String lbasicUnit = row.getCell(10).getStringCellValue();
-            Double lconversionRate = row.getCell(11).getNumericCellValue();
-            String lproperties = row.getCell(12).getStringCellValue();
-            String lrelatedProduct = row.getCell(13).getStringCellValue();
-            String limage = row.getCell(14).getStringCellValue();
-            Double limeiUsed = row.getCell(15).getNumericCellValue();
-            Double lweight = row.getCell(16).getNumericCellValue();
+            String lproductType = 
+                    row.getCell(0) != null ? row.getCell(0).getStringCellValue() : "";
+            String lcategory = 
+                    row.getCell(1) != null ? row.getCell(1).getStringCellValue() : "";
+            String lid = 
+                    row.getCell(2) != null ? row.getCell(2).getStringCellValue() : "";
+            String lname = 
+                    row.getCell(3) != null ? row.getCell(3).getStringCellValue() : "";
+            Double lsalePrice = 
+                    row.getCell(4) != null ? row.getCell(4).getNumericCellValue() : 0.0;
+            Double lprimeCost = 
+                    row.getCell(5) != null ? row.getCell(5).getNumericCellValue() : 0.0;
+            Double linventory = 
+                    row.getCell(6) != null ? row.getCell(6).getNumericCellValue() : 0.0;
+            Double lminInventory = 
+                    row.getCell(7) != null ? row.getCell(7).getNumericCellValue() : 0.0;
+            Double lmaxInventory =
+                    row.getCell(8) != null ? row.getCell(8).getNumericCellValue() : 0.0;
+            String lunit = 
+                    row.getCell(9) != null ? row.getCell(9).getStringCellValue() : "";
+            String lbasicUnit = 
+                    row.getCell(10) != null ? row.getCell(10).getStringCellValue() : "";
+            Double lconversionRate = 
+                    row.getCell(11) != null ? row.getCell(11).getNumericCellValue() : 0.0;
+            String lproperties = 
+                    row.getCell(12) != null ? row.getCell(12).getStringCellValue() : "";
+            String lrelatedProduct = 
+                    row.getCell(13) != null ? row.getCell(13).getStringCellValue() : "";
+            String limage = 
+                    row.getCell(14) != null ? row.getCell(14).getStringCellValue() : "";
+            Double limeiUsed = 
+                    row.getCell(15) != null ? row.getCell(15).getNumericCellValue() : 0;
+            Double lweight = 
+                    row.getCell(16) != null ? row.getCell(16).getNumericCellValue() : 0.0;
             
-            KiotProduct product = new KiotProduct(lproductType, lcategory, lid, lname, lprimeCost,
+            if (!lid.equals("")) {
+                KiotProduct product = new KiotProduct(lproductType, lcategory, lid, lname, lprimeCost,
                                                   lsalePrice, linventory, lminInventory, lmaxInventory,
                                                   lunit, lbasicUnit, lconversionRate, lproperties,
                                                   lrelatedProduct, limage, limeiUsed, lweight);
-            kiotProduct.add(product);
+                kiotProduct.add(product);
+            }
 
         }
         return kiotProduct;

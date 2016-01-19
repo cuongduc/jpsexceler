@@ -18,7 +18,7 @@ public class KiotProduct {
     private SimpleStringProperty category;
     private SimpleStringProperty id;
     private SimpleStringProperty name;
-    private SimpleDoubleProperty primeCost; // Giá vốn
+    private SimpleDoubleProperty primePrice; // Giá vốn
     private SimpleDoubleProperty salePrice; // Giá bán
     private SimpleDoubleProperty inventory; // Tồn kho
     private SimpleDoubleProperty minInventory; // Tồn nhỏ nhất
@@ -64,7 +64,7 @@ public class KiotProduct {
         this.category = new SimpleStringProperty(category);
         this.id = new SimpleStringProperty(id);
         this.name = new SimpleStringProperty(name);
-        this.primeCost = new SimpleDoubleProperty(primeCost);
+        this.primePrice = new SimpleDoubleProperty(primeCost);
         this.salePrice = new SimpleDoubleProperty(salePrice);
         this.inventory = new SimpleDoubleProperty(inventory);
         this.minInventory = new SimpleDoubleProperty(minInventory);
@@ -95,8 +95,8 @@ public class KiotProduct {
         return name.get();
     }
 
-    public Double getPrimeCost() {
-        return primeCost.get();
+    public Double getPrimePrice() {
+        return primePrice.get();
     }
 
     public Double getSalePrice() {

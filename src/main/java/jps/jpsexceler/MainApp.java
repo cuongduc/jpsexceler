@@ -7,11 +7,23 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import jps.model.DBConnector;
 
 
 public class MainApp extends Application {
     
     private Stage primaryStage;
+    
+    public static DBConnector dbConnector;
+    
+    public MainApp() {
+        MainApp.dbConnector = new DBConnector();
+    }
+
+    public DBConnector getDbConnector() {
+        return dbConnector;
+    }
+    
     
     @Override
     public void start(Stage stage) {
@@ -25,7 +37,7 @@ public class MainApp extends Application {
     private void initRootLayout() {
         try {
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainApp.class.getResource("/fxml/Scene.fxml"));
+            loader.setLocation(MainApp.class.getResource("/fxml/MainApp.fxml"));
             BorderPane root = (BorderPane) loader.load();
             
             Scene scene = new Scene(root);
