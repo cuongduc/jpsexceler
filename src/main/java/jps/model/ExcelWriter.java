@@ -65,7 +65,7 @@ public class ExcelWriter {
         
         for (KiotProduct p : products) {
             i++;
-            m.put(i, new Object[] {"", p.getName(), p.getId(), p.getSalePrice(), "", "", p.getInventory(), p.getImage(), ""});
+            m.put(i, new Object[] {"", p.getName(), p.getId(), p.getSalePrice(), p.getCompetentPrice(), "", p.getInventory(), p.getAvatar(), p.getImage()});
         }
     }
     

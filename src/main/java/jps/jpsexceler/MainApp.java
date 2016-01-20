@@ -10,6 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.TableView;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import jps.model.DBConnector;
@@ -59,8 +60,8 @@ public class MainApp extends Application {
             root.getStylesheets().add("/styles/Styles.css");
             // Find the TableViewElement
             Scene scene = new Scene(root);
-            
             this.primaryStage.setScene(scene);
+            this.primaryStage.getIcons().add(new Image(MainApp.class.getResourceAsStream("/files/logo.jpg")));
         } catch (IOException e) {
             e.printStackTrace();
         }

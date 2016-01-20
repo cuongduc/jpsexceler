@@ -306,14 +306,14 @@ public class FlickrUploader {
 
         RequestContext rc = RequestContext.getRequestContext();
 
-//        if (this.authStore != null) {
-//            Auth auth = this.authStore.retrieve(this.nsid);
-//            if (auth == null) {
-//                this.authorize();
-//            } else {
-//                rc.setAuth(auth);
-//            }
-//        }
+        if (this.authStore != null) {
+            Auth auth = this.authStore.retrieve(this.nsid);
+            if (auth == null) {
+                this.authorize();
+            } else {
+                rc.setAuth(auth);
+            }
+        }
 
         // PhotosetsInterface pi = flickr.getPhotosetsInterface();
         // PhotosInterface photoInt = flickr.getPhotosInterface();

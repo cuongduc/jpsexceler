@@ -31,7 +31,9 @@ public class KiotProduct {
     private SimpleStringProperty image; // URL hình ảnh
     private SimpleDoubleProperty imeiUsed; // Sử dụng imei
     private SimpleDoubleProperty weight; // Trọng lượng
-
+    
+    private SimpleStringProperty competentPrice;
+    private SimpleStringProperty avatar;
     /**
      * Constructor
      * 
@@ -58,7 +60,7 @@ public class KiotProduct {
                        Double salePrice, Double inventory, Double minInventory, 
                        Double maxInventory, String unit, String basicUnit, 
                        Double conversionRate, String properties, 
-                       String relatedProduct, String image, 
+                       String relatedProduct, String image,
                        Double imeiUsed, Double weight) {
         this.productType = new SimpleStringProperty(productType);
         this.category = new SimpleStringProperty(category);
@@ -77,6 +79,8 @@ public class KiotProduct {
         this.image = new SimpleStringProperty(image);
         this.imeiUsed = new SimpleDoubleProperty(imeiUsed);
         this.weight = new SimpleDoubleProperty(weight);
+        this.competentPrice = new SimpleStringProperty("");
+        this.avatar = new SimpleStringProperty("");
     }
 
     public String getProductType() {
@@ -146,12 +150,98 @@ public class KiotProduct {
     public Double getWeight() {
         return weight.get();
     }    
+
+    public String getCompetentPrice() {
+        return competentPrice.get();
+    }
+
+    public void setCompetentPrice(String competentPrice) {
+        this.competentPrice.set(competentPrice);
+    }
+
+    public String getAvatar() {
+        return avatar.get();
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar.set(avatar);
+    }
+
+    public void setProductType(String productType) {
+        this.productType.set(productType);
+    }
+
+    public void setCategory(String category) {
+        this.category.set(category);
+    }
+
+    public void setId(String id) {
+        this.id.set(id);
+    }
+
+    public void setName(String name) {
+        this.name.set(name);
+    }
+
+    public void setPrimePrice(Double primePrice) {
+        this.primePrice.set(primePrice);
+    }
+
+    public void setSalePrice(Double salePrice) {
+        this.salePrice.set(salePrice);
+    }
+
+    public void setInventory(Double inventory) {
+        this.inventory.set(inventory);
+    }
+
+    public void setMinInventory(Double minInventory) {
+        this.minInventory.set(minInventory);
+    }
+
+    public void setMaxInventory(Double maxInventory) {
+        this.maxInventory.set(maxInventory);
+    }
+
+    public void setUnit(String unit) {
+        this.unit.set(unit);
+    }
+
+    public void setBasicUnit(String basicUnit) {
+        this.basicUnit.set(basicUnit);
+    }
+
+    public void setConversionRate(Double conversionRate) {
+        this.conversionRate.set(conversionRate);
+    }
+
+    public void setProperties(String properties) {
+        this.properties.set(properties);
+    }
+
+    public void setRelatedProduct(String relatedProduct) {
+        this.relatedProduct.set(relatedProduct);
+    }
+
+    public void setImage(String image) {
+        this.image.set(image);
+    }
+
+    public void setImeiUsed(Double imeiUsed) {
+        this.imeiUsed.set(imeiUsed);
+    }
+
+    public void setWeight(Double weight) {
+        this.weight.set(weight);
+    }
+
+    
     
     
     
     @Override
     public String toString() {
-        return this.id.get() + " | " + this.name.get() + " | " + this.salePrice.get();
+        return this.id.get() + " | " + this.name.get() + " | " + this.salePrice.get() + " | " + this.getCompetentPrice();
     }
     
 }

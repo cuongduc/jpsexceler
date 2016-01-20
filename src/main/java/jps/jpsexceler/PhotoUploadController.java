@@ -15,9 +15,15 @@ import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.TilePane;
 import javafx.stage.FileChooser;
@@ -38,8 +44,14 @@ public class PhotoUploadController implements Initializable {
     @FXML
     private Button uploadFlickrButton;
     
+    @FXML 
+    private Button closePhotoUploadPaneButton;
+    
     @FXML
     private BorderPane photoUploaderBorderPane;
+    
+    @FXML
+    private TextField photoUrlsTextField;
 
     public PhotoUploadController() throws InstantiationException, IllegalAccessException {
         app = MainApp.class.newInstance();
@@ -83,15 +95,20 @@ public class PhotoUploadController implements Initializable {
     
     @FXML
     private void uploadFlickrButtonClickedHandler(ActionEvent event) throws FlickrException, IOException, Exception {
+        if (imageFiles == null) {
+            showEmtyImageMessage();
+            return;
+        }
+        
         FlickrUploader fu = new FlickrUploader();
         Flickr flickr = fu.getFlickr();
         String farmUrl = "";
+        photoUrls.clear();
         
         for(File f: imageFiles) {
             String fName = f.getAbsolutePath();
             
             String photoId = fu.uploadfile(f.getAbsolutePath(), "Image");
-            System.out.println(photoId);
             
             Collection<Size> photoSizes = flickr.getPhotosInterface().getSizes(photoId);
             
@@ -105,6 +122,48 @@ public class PhotoUploadController implements Initializable {
         }
         
         System.out.println(photoUrls);
+        addUrlsToPhotoUrlsTextField();
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("JPS Exceler");
+        alert.setHeaderText("Upload ảnh lên FLickr");
+        alert.setContentText("Đã upload thành công hình ảnh lên Flickr."
+                + " Vui lòng Copy urls trong ô URL và Paste vào ô URL trong giao diện chính");
+        alert.showAndWait();
     }
     
+    private void showEmtyImageMessage() {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setTitle("JPS Exceler");
+        alert.setHeaderText("Upload ảnh lên FLickr");
+        alert.setContentText("Không có hình ảnh nào được chọn. Bạn phải chọn ít nhất 01 hình ảnh để upload");
+        alert.showAndWait();
+    }
+    
+    /**
+     * Pass data to main
+     * @param event 
+     */
+    @FXML
+    private void closePhotoUploadPaneButtonClickedHandler(ActionEvent event) {
+        ((Node)(event.getSource())).getScene().getWindow().hide();
+    }
+    
+    private void addUrlsToPhotoUrlsTextField() {
+        String urls = "";
+          
+        for (String url : photoUrls) {
+            urls += (url + ",");
+        }
+        System.out.println(urls);
+        this.photoUrlsTextField.setText(urls);
+        copyUrlsToClipboard(urls);
+
+    }
+    
+    private void copyUrlsToClipboard(String text) {
+        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        final ClipboardContent content = new ClipboardContent();
+        content.putString(text);
+        clipboard.setContent(content);
+    }
 }

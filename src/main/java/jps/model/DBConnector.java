@@ -10,6 +10,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
+import java.util.Set;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -83,10 +85,14 @@ public class DBConnector {
     
     public boolean synchronizeProduct(KiotProduct p) throws SQLException, SQLException {
         // If the product exists, update it
-        if (isProductExisted(p).next())
+        if (isProductExisted(p).next()) {
+        //   System.out.println("Product existed --> Update : " + p.getId());
             return updateProduct(p);
-        else // otherwise, insert new product to db
+        }
+        else {// otherwise, insert new product to db
+       //    System.out.println("Product not existed --> Insert: " + p.getId());
             return insertProduct(p);
+        }
            
     }
     
@@ -135,6 +141,7 @@ public class DBConnector {
                                  p.getImeiUsed() + "'," +
                                  p.getWeight() +
                       ")";
+//        System.out.println(sql);
         return statement.execute(sql);
     }
     
@@ -163,10 +170,10 @@ public class DBConnector {
                        + "conversionRate = " + p.getConversionRate() + ","
                        + "properties = '" + p.getProperties() + "',"
                        + "relatedProduct = '" + p.getRelatedProduct() + "',"
-                       + "image = '" + p.getImage() + "',"
                        + "imeiUsed = " + p.getImeiUsed() + ","
                        + "weight = " + p.getWeight() 
                        + " WHERE id = '" + p.getId() + "';";
+//        System.out.println(sql);
         return statement.execute(sql);
     }
     
@@ -208,10 +215,32 @@ public class DBConnector {
                     rs.getDouble("weight")
                     
             );
+            p.setAvatar(rs.getString("avatar"));
+            p.setCompetentPrice(rs.getString("competentPrice"));
             
             list.add(p);
         }
         
         return list;
+    }
+    
+    public int updateProduct(KiotProduct p, Map<String, String> data) throws SQLException {
+        statement = connection.createStatement();
+        
+        String sql = "UPDATE products SET ";
+        String attr = "";
+        Set<String> keySet = data.keySet();
+        
+        for (String key: keySet) {
+            String value = data.get(key);
+            attr += key + "='"+value+"',";
+        }
+        
+        String updateAttr = attr.substring(0, attr.length() - 1);
+        String where = " WHERE id = '" + p.getId() + "';";
+        sql = sql + updateAttr + where;
+        System.out.println(sql);
+        
+        return statement.executeUpdate(sql);
     }
 }
