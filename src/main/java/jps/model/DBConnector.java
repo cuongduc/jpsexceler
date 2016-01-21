@@ -21,6 +21,7 @@ import javafx.collections.ObservableList;
  */
 public class DBConnector {
     
+    
     private final String DRIVER_NAME = "org.sqlite.JDBC";
     
     private final String DATABASE_NAME = "jdbc:sqlite:jps.db";
@@ -213,7 +214,6 @@ public class DBConnector {
                     rs.getString("image"),
                     rs.getDouble("imeiUsed"),
                     rs.getDouble("weight")
-                    
             );
             p.setAvatar(rs.getString("avatar"));
             p.setCompetentPrice(rs.getString("competentPrice"));

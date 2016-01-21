@@ -19,6 +19,7 @@ import jps.model.KiotProduct;
 
 public class MainApp extends Application {
     
+    
     private Stage primaryStage;
     
     public static DBConnector dbConnector;
@@ -62,6 +63,7 @@ public class MainApp extends Application {
             Scene scene = new Scene(root);
             this.primaryStage.setScene(scene);
             this.primaryStage.getIcons().add(new Image(MainApp.class.getResourceAsStream("/files/logo.jpg")));
+            
         } catch (IOException e) {
             e.printStackTrace();
         }

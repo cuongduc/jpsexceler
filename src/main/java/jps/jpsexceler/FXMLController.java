@@ -1,12 +1,11 @@
 package jps.jpsexceler;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,15 +17,22 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Pagination;
+import javafx.scene.control.PaginationBuilder;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -36,10 +42,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
+import javafx.util.Callback;
 import jps.model.DBConnector;
 import jps.model.ExcelReader;
 import jps.model.ExcelWriter;
@@ -60,6 +66,8 @@ public class FXMLController implements Initializable {
     // List of KiotProducts
     private ObservableList<KiotProduct> kiotProduct = FXCollections.observableArrayList();
     
+    private Pagination productImagePagination;
+    
     @FXML
     private BorderPane rootLayoutBorderPane;
 
@@ -75,9 +83,17 @@ public class FXMLController implements Initializable {
     @FXML
     private StackPane productContainerStackPane;
     
+    @FXML
+    private TextField filterTextField;
+    
+    @FXML
+    private VBox imagePaginationVBox;
+    
+    
     // Detail panel controls
     @FXML
     private Button productPhotoButton;
+    
     
     @FXML
     private Button saveChangeButton;
@@ -97,8 +113,8 @@ public class FXMLController implements Initializable {
     @FXML
     private TextField salePriceTextField;
     
-    @FXML
-    private TextField primeSaleTextField;
+//    @FXML
+//    private TextField primeSaleTextField;
     
     @FXML
     private TextField competentPriceTextField;
@@ -112,7 +128,7 @@ public class FXMLController implements Initializable {
     @FXML
     private TextField imageTextField;
     
-    private DBConnector db;
+    private final DBConnector db;
     
     public FXMLController() {
         this.db = new DBConnector();
@@ -132,7 +148,6 @@ public class FXMLController implements Initializable {
         if (file == null)
             return;
         
-        DBConnector db = new DBConnector();
         ObservableList<KiotProduct> productToExport = db.getAllProducts();
         ExcelWriter ew = new ExcelWriter();
         ew.createSheet("default");
@@ -173,24 +188,11 @@ public class FXMLController implements Initializable {
                 flag = false;
                 
         }
-//        if (flag == true) {
-//            Alert info = new Alert(AlertType.INFORMATION);
-//            info.setTitle("JPS Exceler");
-//            info.setHeaderText("Đồng bộ dữ liệu");
-//            info.setContentText("Đồng bộ dữ liệu thành công");
-//            info.showAndWait();
-//        } else {
-//            Alert info = new Alert(AlertType.INFORMATION);
-//            info.setTitle("JPS Exceler");
-//            info.setHeaderText("Đồng bộ dữ liệu");
-//            info.setContentText("Đẫ có lỗi xảy ra trong quá trình đồng bộ dữ liệu. Xin hãy kiểm tra lại");
-//            info.showAndWait();
-//
-//        }
     }
     
     @FXML
     private void importFileButtonClickHandler(ActionEvent event) throws IOException, InvalidFormatException {
+    
         FileChooser fc = new FileChooser();
         fc.setTitle("Chọn file Excel");
         Stage primaryStage = app.getStage();
@@ -237,14 +239,6 @@ public class FXMLController implements Initializable {
             alert.setContentText("Đã có lỗi khi đồng bộ dữ liệu");
             alert.showAndWait();
         }
-//        
-//        System.out.println("Reading Excel ");
-//        // Reading another file => clear the list, reinitialize
-//        clearProductObservableList();
-//        removeProductTableView();
-//        readExcel(in);
-//        attachKiotProductTableView();
-
     }
     
     private boolean synchronizeData(ObservableList<KiotProduct> list) {
@@ -288,33 +282,64 @@ public class FXMLController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         productPhotoButton.setDisable(true);
         synchronizeDataButton.setDisable(true);
-//        avatarImageView.maxWidth(200);
         imageTextField.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable,
                     String oldValue, String newValue) {
-                
-                String first = newValue.substring(0, newValue.indexOf(','));
+                String first;
+                if (newValue.contains(",") && !newValue.isEmpty())
+                    first = newValue.substring(0, newValue.indexOf(','));
+                else
+                    first = newValue;
                 avatarTextField.setText(first);
             }
         });
         
-        avatarTextField.textProperty().addListener(new ChangeListener<String>() {
+        initTableViewFromDB();
+        
+        addSearchProductFeature();
+        
+    }   
+    
+    /**
+     * Search by product ID and Name
+     */
+    private void addSearchProductFeature() {
+        // Wrap ObservableList in a FilteredList
+        FilteredList<KiotProduct> filteredProduct = new FilteredList<>(kiotProduct, p->true);
+        // Set the filter Predicate whenever the filter changes
+        filterTextField.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable,
                     String oldValue, String newValue) {
-                
-                if (!newValue.equals("")) {
-                    Image img = new Image(newValue);
-//                    avatarImageView.maxWidth(150);
-//                    avatarImageView.setImage(img);
-                }
+                    
+                filteredProduct.setPredicate(product -> {
+                    // If filter text is empty
+                    if (newValue == null || newValue.isEmpty())
+                        return true;
+                    
+                    // Compare ID and Name
+                    String filter = newValue.toLowerCase();
+                    
+                    if (product.getName().toLowerCase().contains(filter))
+                        return true; // Filter matches name
+                    else if (product.getId().toLowerCase().contains(filter))
+                        return true; // Filter matches id
+                    return false; // Does not match
+                });
             }
         });
         
-        initTableViewFromDB();
-    }    
-    
+        // Wrap the FilteredList in  a SortedList
+        SortedList<KiotProduct> sortedProduct = new SortedList<>(filteredProduct);
+        
+        // Bind the SortedList comparator to the TableView comparator.
+        sortedProduct.comparatorProperty().bind(kiotProductTableView.comparatorProperty());
+        
+        // Add sorted and filtered to the items
+        kiotProductTableView.setItems(sortedProduct);
+    }
+            
     private void initTableViewFromDB() {
         try {
             kiotProduct = db.getAllProducts();
@@ -323,164 +348,60 @@ public class FXMLController implements Initializable {
         } catch (SQLException ex) {
             Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        TableColumn productTypeCol = new TableColumn("Hàng hóa");
-        productTypeCol.setCellValueFactory(
-            new PropertyValueFactory<KiotProduct, String>("productType")
-        );
-        
-        TableColumn categoryCol = new TableColumn("Nhóm sản phẩm");
-        categoryCol.setCellValueFactory(
-            new PropertyValueFactory<KiotProduct, String>("category")
-        );
+        // Row number column
+        TableColumn noCol = new TableColumn<KiotProduct, Number>("#");
+        noCol.setCellFactory( new Callback<TableColumn, TableCell>() {
+            @Override
+            public TableCell call(TableColumn p) {
+                return new TableCell() {
+                    @Override
+                    public void updateItem(Object item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setGraphic(null);
+                        setText(empty ? null : getIndex() + 1 + "");
+                    }
+                };
+            }
+        });
         
         TableColumn idCol = new TableColumn("Mã sản phẩm");
         idCol.setCellValueFactory(
-            new PropertyValueFactory<KiotProduct, String>("id")
+            new PropertyValueFactory<>("id")
         );
         
         TableColumn nameCol = new TableColumn("Tên sản phẩm");
-        nameCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("name"));
-        
-        TableColumn primeCostCol = new TableColumn("Giá vốn");
-        primeCostCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("primePrice"));
-        
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+              
         TableColumn salePriceCol = new TableColumn("Giá bán");
-        salePriceCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("salePrice"));
+        salePriceCol.setCellValueFactory(new PropertyValueFactory<>("salePrice"));
         
         TableColumn competentPriceCol = new TableColumn("Giá thị trường");
-        competentPriceCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("competentPrice"));
+        competentPriceCol.setCellValueFactory(new PropertyValueFactory<>("competentPrice"));
         
         TableColumn inventoryCol = new TableColumn("Tồn");
-        inventoryCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("inventory"));
-        
-        TableColumn minInventoryCol = new TableColumn("Tồn nhỏ nhất");
-        minInventoryCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("minInventory"));
-        
-        TableColumn maxInventoryCol = new TableColumn("Tồn lớn nhất");
-        maxInventoryCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("maxInventory"));
-        
-        TableColumn unitCol = new TableColumn("Đơn vị tính");
-        unitCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("unit"));
-        
-        TableColumn basicUnitCol = new TableColumn("Mã đơn vị tính cơ bản");
-        basicUnitCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("basicUnit"));
-        
-        TableColumn conversionRateCol = new TableColumn("Quy đổi");
-        conversionRateCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("conversionRate"));
-        
-        TableColumn propertiesCol = new TableColumn("Thuộc tính");
-        propertiesCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("properties"));
-        
-        TableColumn relatedProductCol = new TableColumn("Mã hàng hóa liên quan");
-        relatedProductCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("relatedProduct"));
-        
+        inventoryCol.setCellValueFactory(new PropertyValueFactory<>("inventory"));
+
         TableColumn avatarCol = new TableColumn("Avatar");
-        avatarCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("avatar"));
+        avatarCol.setCellValueFactory(new PropertyValueFactory<>("avatar"));
         
         TableColumn imageCol = new TableColumn("Hình ảnh");
-        imageCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("image"));
+        imageCol.setCellValueFactory(new PropertyValueFactory<>("image"));
         
-        TableColumn imeiUsedCol = new TableColumn("Sử dụng imei");
-        imeiUsedCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("imeiUsed"));
-
-        TableColumn weightCol = new TableColumn("Trọng lượng");
-        weightCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("weight"));
-
-        kiotProductTableView.getColumns().addAll(productTypeCol, categoryCol, idCol,
-                                                 nameCol, primeCostCol, salePriceCol, competentPriceCol,
-                                                 inventoryCol, minInventoryCol, maxInventoryCol,
-                                                 unitCol, basicUnitCol, conversionRateCol,
-                                                 propertiesCol, relatedProductCol, avatarCol, imageCol,
-                                                 imeiUsedCol, weightCol);
+        kiotProductTableView.getColumns().addAll(noCol, idCol, nameCol, salePriceCol, 
+                                                 competentPriceCol, inventoryCol, avatarCol, imageCol);
         addTableViewListener();
     }
+    
     public void readExcel(File in) throws IOException, InvalidFormatException {
         eReader = new ExcelReader(in);
-        wb = eReader.getWorkbook();
-        
-//        initKiotProductTableView();
-        
+        wb = eReader.getWorkbook();      
     }
     
-    private void initKiotProductTableView() {
-        if (!productContainerStackPane.getChildren().contains(kiotProductTableView)) {
-//            initKiotProductTableViewColums();
-        } else {
-            kiotProductTableView.getItems().setAll(loadProductsToKiotProductList());
-        }
-    }
-    
-//    private void initKiotProductTableViewColums() {
-//        TableColumn productTypeCol = new TableColumn("Hàng hóa");
-//        productTypeCol.setCellValueFactory(
-//            new PropertyValueFactory<KiotProduct, String>("productType")
-//        );
-//        
-//        TableColumn categoryCol = new TableColumn("Nhóm sản phẩm");
-//        categoryCol.setCellValueFactory(
-//            new PropertyValueFactory<KiotProduct, String>("category")
-//        );
-//        
-//        TableColumn idCol = new TableColumn("Mã sản phẩm");
-//        idCol.setCellValueFactory(
-//            new PropertyValueFactory<KiotProduct, String>("id")
-//        );
-//        
-//        TableColumn nameCol = new TableColumn("Tên sản phẩm");
-//        nameCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("name"));
-//        
-//        TableColumn primeCostCol = new TableColumn("Giá vốn");
-//        primeCostCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("primePrice"));
-//        
-//        TableColumn salePriceCol = new TableColumn("Giá bán");
-//        salePriceCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("salePrice"));
-//        
-//        TableColumn inventoryCol = new TableColumn("Tồn");
-//        inventoryCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("inventory"));
-//        
-//        TableColumn minInventoryCol = new TableColumn("Tồn nhỏ nhất");
-//        minInventoryCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("minInventory"));
-//        
-//        TableColumn maxInventoryCol = new TableColumn("Tồn lớn nhất");
-//        maxInventoryCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("maxInventory"));
-//        
-//        TableColumn unitCol = new TableColumn("Đơn vị tính");
-//        unitCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("unit"));
-//        
-//        TableColumn basicUnitCol = new TableColumn("Mã đơn vị tính cơ bản");
-//        basicUnitCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("basicUnit"));
-//        
-//        TableColumn conversionRateCol = new TableColumn("Quy đổi");
-//        conversionRateCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("conversionRate"));
-//        
-//        TableColumn propertiesCol = new TableColumn("Thuộc tính");
-//        propertiesCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("properties"));
-//        
-//        TableColumn relatedProductCol = new TableColumn("Mã hàng hóa liên quan");
-//        relatedProductCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("relatedProduct"));
-//
-//        TableColumn imageCol = new TableColumn("Hình ảnh");
-//        imageCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("image"));
-//        
-//        TableColumn imeiUsedCol = new TableColumn("Sử dụng imei");
-//        imeiUsedCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, Double>("imeiUsed"));
-//
-//        TableColumn weightCol = new TableColumn("Trọng lượng");
-//        weightCol.setCellValueFactory(new PropertyValueFactory<KiotProduct, String>("weight"));
-//
-//        kiotProductTableView.getColumns().addAll(productTypeCol, categoryCol, idCol,
-//                                                 nameCol, primeCostCol, salePriceCol,
-//                                                 inventoryCol, minInventoryCol, maxInventoryCol,
-//                                                 unitCol, basicUnitCol, conversionRateCol,
-//                                                 propertiesCol, relatedProductCol,imageCol,
-//                                                 imeiUsedCol, weightCol);
-//        kiotProductTableView.getItems().setAll(loadProductsToKiotProductList());
-//    }
     
     private ObservableList<KiotProduct> loadProductsToKiotProductList() {
         XSSFSheet sheet = wb.getSheetAt(0);
-        
+     
+        productPhotoButton.setDisable(true);
         Iterator<Row> rowIterator = sheet.rowIterator();
         
         while (rowIterator.hasNext()) {
@@ -541,17 +462,16 @@ public class FXMLController implements Initializable {
     }
     
     private class RowSelectedChangeListener implements ChangeListener {
-        
         @Override
         public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+            productPhotoButton.setDisable(false);
             KiotProduct p = (KiotProduct)kiotProductTableView.getSelectionModel().getSelectedItem();
             if (p != null) {
                 idTextField.setText(p.getId());
                 nameTextField.setText(p.getName());
                 categoryTextField.setText(p.getCategory());
                 salePriceTextField.setText(p.getSalePrice().toString());
-                primeSaleTextField.setText(p.getPrimePrice().toString());
-                if ((p.getCompetentPrice() != null) || (!p.getCompetentPrice().equals("")))
+                if ((p.getCompetentPrice() != null) && (!p.getCompetentPrice().equals("")))
                    competentPriceTextField.setText(p.getCompetentPrice());
                 inventoryTextField.setText(p.getInventory().toString());
                 if (p.getAvatar() != null && !p.getAvatar().equals(""))
@@ -560,27 +480,68 @@ public class FXMLController implements Initializable {
                 if (p.getImage() != null && !p.getImage().equals(""))
                     imageTextField.setText(p.getImage());
                 else imageTextField.setText("");
-                try {
-                    if (p.getAvatar() == null || p.getAvatar().equals("")) {
-                        avatarImageView.setImage(null);
-                    }
-                    else {
-                        javafx.scene.image.Image img = new javafx.scene.image.Image(p.getAvatar());
-                        avatarImageView.setImage(img);
-                    }
-                  
-                } catch (Exception ex) {
-                    
-                }
                 
-                // Enable image button
-                productPhotoButton.setDisable(false);
-
+                
+                // TODO: create ImagePagination
+                // Check if there is any image of the product
+                if (isTouchableAvatar(p) || isTouchableImage(p)) {
+                    buildImagePagination(p);
+                }
             }
         }
         
     }
   
+    private boolean isTouchableAvatar(KiotProduct p) {
+        return p.getAvatar() != null && !p.getAvatar().isEmpty();
+    }
+    
+    private boolean isTouchableImage(KiotProduct p) {
+        return p.getImage() != null && !p.getImage().isEmpty();
+    }
+    
+    private void buildImagePagination(KiotProduct p) {
+        String avatarUrl = p.getAvatar();
+        String imageUrls = p.getImage();
+        ArrayList<String> urls = makeUrlList(imageUrls, ",");
+        int pageCount = urls.size();
+        Image[] images = new Image[pageCount];
+        productImagePagination = new Pagination(pageCount, 0);
+        productImagePagination.getStyleClass().add(Pagination.STYLE_CLASS_BULLET);
+        
+        productImagePagination.setPageFactory(
+            new Callback<Integer, Node>() {
+                @Override
+                public Node call(Integer pageIndex) {
+                    return createProductImageSlideShow(pageIndex, images);
+                }
+            });
+//        imagePaginationVBox.getChildren().clear();
+        imagePaginationVBox.getChildren().add(productImagePagination);
+    }
+    
+    private VBox createProductImageSlideShow(Integer pageIndex, Image[] images) {
+        VBox vb = new VBox();
+        ImageView iv = new ImageView(images[pageIndex]);
+        vb.setAlignment(Pos.CENTER);
+        vb.getChildren().add(iv);
+        return vb;
+    }
+    
+    /**
+     * Make a list of urls from a string of urls
+     * separated by 'separator'
+     * @param urls
+     * @param separator
+     * @return 
+     */
+    private ArrayList<String> makeUrlList(String urls, String separator) {
+        ArrayList<String> results = new ArrayList<>();
+        String[] tokens = urls.split(separator);
+        results.addAll(Arrays.asList(tokens));
+        
+        return results;
+    }
     /**
      * When use click on Image... button
      * shows the PhotoUploader view
@@ -589,11 +550,10 @@ public class FXMLController implements Initializable {
      */
     @FXML
     private void productPhotoButtonClickedHandler(ActionEvent event) {
-        
         try {
             FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/PhotoUploader.fxml"));
             BorderPane photoUploaderRoot = (BorderPane) loader.load();
-            
+            photoUploaderRoot.getStylesheets().add("/styles/Styles.css");
             Stage stage = new Stage();
             stage.setScene(new Scene(photoUploaderRoot));
             stage.resizableProperty().setValue(Boolean.FALSE);
@@ -622,7 +582,7 @@ public class FXMLController implements Initializable {
         String name = this.nameTextField.getText();
         String category = this.categoryTextField.getText();
         String salePrice = this.salePriceTextField.getText();
-        String primePrice = this.primeSaleTextField.getText();
+//        String primePrice = this.primeSaleTextField.getText();
         String competentPrice = this.competentPriceTextField.getText();
         String image = this.imageTextField.getText();
         String avatar = this.avatarTextField.getText();
@@ -644,10 +604,10 @@ public class FXMLController implements Initializable {
             data.put("salePrice", salePrice);
             p.setSalePrice(new Double(salePrice));
         }
-        if (!primePrice.equals("")) {
-            data.put("primePrice", primePrice);
-            p.setPrimePrice(new Double(primePrice));
-        }
+//        if (!primePrice.equals("")) {
+//            data.put("primePrice", primePrice);
+//            p.setPrimePrice(new Double(primePrice));
+//        }
         if (!competentPrice.equals("")) {
             data.put("competentPrice", competentPrice);
             p.setCompetentPrice(competentPrice);
@@ -661,7 +621,7 @@ public class FXMLController implements Initializable {
             p.setAvatar(avatar);
         }
         
-        DBConnector db = new DBConnector();
+//        DBConnector db = new DBConnector();
         int count = db.updateProduct(p, data);
         if (count != 0) {
             Alert alert = new Alert(AlertType.INFORMATION);

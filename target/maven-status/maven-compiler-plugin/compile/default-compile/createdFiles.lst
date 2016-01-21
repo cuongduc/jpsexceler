@@ -1,4 +1,5 @@
 jps/jpsexceler/FXMLController$2.class
+jps/jpsexceler/FXMLController$3$1.class
 jps/model/ExcelReader.class
 jps/jpsexceler/FXMLController.class
 jps/jpsexceler/PhotoUploadController.class
@@ -8,5 +9,7 @@ jps/model/ExcelWriter.class
 jps/jpsexceler/MainApp.class
 jps/model/DBConnector.class
 jps/jpsexceler/FXMLController$RowSelectedChangeListener.class
+jps/jpsexceler/FXMLController$4.class
 jps/model/KiotProduct.class
+jps/jpsexceler/FXMLController$3.class
 jps/model/FlickrUploader.class

@@ -81,6 +81,9 @@ public class PhotoUploadController implements Initializable {
         preview.setHgap(5);
         preview.setPrefColumns(3);
         
+        if (imageFiles == null)
+            return;
+        
         for (File im : imageFiles) {
             System.out.println(im.getAbsolutePath());
             Image image = new Image(new FileInputStream(im.getAbsolutePath()), 200, 0, true, true);
@@ -154,7 +157,7 @@ public class PhotoUploadController implements Initializable {
         for (String url : photoUrls) {
             urls += (url + ",");
         }
-        System.out.println(urls);
+        urls = urls.substring(0, urls.length() - 1);
         this.photoUrlsTextField.setText(urls);
         copyUrlsToClipboard(urls);
 
