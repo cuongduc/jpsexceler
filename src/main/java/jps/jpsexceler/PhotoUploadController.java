@@ -3,6 +3,7 @@ package jps.jpsexceler;
 import com.flickr4java.flickr.Flickr;
 import com.flickr4java.flickr.FlickrException;
 import com.flickr4java.flickr.photos.Size;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -12,21 +13,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.TilePane;
 import javafx.stage.FileChooser;
+import javax.imageio.ImageIO;
 import jps.model.FlickrUploader;
 
 public class PhotoUploadController implements Initializable {
@@ -69,7 +69,7 @@ public class PhotoUploadController implements Initializable {
         fc.setTitle("Chọn ảnh sản phẩm để upload lên Flickr");
         imageFiles = fc.showOpenMultipleDialog(app.getStage());
         
-        if (imageFiles == null) ;
+        if (imageFiles == null) return ;
         
         createImagePreviewPane();
         
@@ -101,6 +101,9 @@ public class PhotoUploadController implements Initializable {
         if (imageFiles == null) {
             showEmtyImageMessage();
             return;
+        } else {
+            imageFiles.clear();
+            imageFiles = resizeImages();
         }
         
         FlickrUploader fu = new FlickrUploader();
@@ -142,31 +145,55 @@ public class PhotoUploadController implements Initializable {
         alert.showAndWait();
     }
     
-    /**
-     * Pass data to main
-     * @param event 
-     */
-    @FXML
-    private void closePhotoUploadPaneButtonClickedHandler(ActionEvent event) {
-        ((Node)(event.getSource())).getScene().getWindow().hide();
+    private List<File> resizeImages() {
+        List<File> imgList = new ArrayList<>();
+        
+        for(File f: imageFiles) {
+            Image img = new Image(f.getAbsolutePath(),480, 0, true, true);
+            
+            File output = new File(makeResizedFileName(f));
+            System.out.println(output.getAbsolutePath());
+            
+//            String format = f.getAbsolutePath().substring(f.getAbsolutePath().lastIndexOf('.') + , )
+            BufferedImage bfImage = SwingFXUtils.fromFXImage(img, null);
+            
+            try {
+                ImageIO.write(bfImage, "jpg", output);
+            } catch(IOException e) {
+                throw new RuntimeException(e);
+            }
+            
+            imgList.add(output);
+        }
+        
+        return imgList;
     }
+    
+    private String makeResizedFileName(File f) {
+        String orgFileName = f.getAbsolutePath();
+        String suffix = "_resize";
+        int pos = orgFileName.lastIndexOf('.');
+        
+        orgFileName = new StringBuilder(orgFileName).insert(pos, suffix).toString();
+        
+        return orgFileName;
+    }
+    
+//    /**
+//     * Pass data to main
+//     * @param event 
+//     */
+//    @FXML
+//    private void closePhotoUploadPaneButtonClickedHandler(ActionEvent event) {
+//        ((Node)(event.getSource())).getScene().getWindow().hide();
+//    }
     
     private void addUrlsToPhotoUrlsTextField() {
         String urls = "";
           
-        for (String url : photoUrls) {
-            urls += (url + ",");
-        }
+        urls = photoUrls.stream().map((url) -> (url + ",")).reduce(urls, String::concat);
+        
         urls = urls.substring(0, urls.length() - 1);
         this.photoUrlsTextField.setText(urls);
-        copyUrlsToClipboard(urls);
-
-    }
-    
-    private void copyUrlsToClipboard(String text) {
-        final Clipboard clipboard = Clipboard.getSystemClipboard();
-        final ClipboardContent content = new ClipboardContent();
-        content.putString(text);
-        clipboard.setContent(content);
     }
 }
