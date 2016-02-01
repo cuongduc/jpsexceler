@@ -114,17 +114,17 @@ public class PhotoUploadController implements Initializable {
             String photoId = fu.uploadfile(f.getAbsolutePath(), "Image");
             
             Collection<Size> photoSizes = flickr.getPhotosInterface().getSizes(photoId);
-            
             for(Size s: photoSizes) {
                 String photoSource = s.getSource();
-                if (photoSource.lastIndexOf("_o") > 0) {
+                System.out.println(photoSource);
+
+                if (photoSource.lastIndexOf("_b") > 0) {
                     farmUrl = photoSource;
                     this.photoUrls.add(farmUrl);
                 }
             }
         }
         
-        System.out.println(photoUrls);
         addUrlsToPhotoUrlsTextField();
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("JPS Exceler");
