@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -48,10 +50,28 @@ public class DBConnector {
         }
     }
     
+    public boolean checkTableExisted(String table) {
+        try {
+            statement = connection.createStatement();
+        } catch (SQLException ex) {
+            Logger.getLogger(DBConnector.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        String sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table + "'";
+        boolean result = false;
+        
+        try {
+            result = statement.execute(sql);
+        } catch (SQLException ex) {
+            Logger.getLogger(DBConnector.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return result;
+    }
+    
     public int createProductsTable() throws SQLException {
         // TODO: check if table exist;
         statement = connection.createStatement();
-        String sql = "CREATE TABLE products (" +
+        String sql = "CREATE TABLE IF NOT EXISTS products (" +
                      "productType VARCHAR(50) NOT NULL," +
                      "category VARCHAR(100) NOT NULL," +
                      "id VARCHAR(50) NOT NULL PRIMARY KEY," +

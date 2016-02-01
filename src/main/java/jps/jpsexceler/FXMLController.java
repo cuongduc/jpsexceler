@@ -31,7 +31,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Pagination;
-import javafx.scene.control.PaginationBuilder;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -44,6 +43,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import jps.model.DBConnector;
@@ -133,6 +133,7 @@ public class FXMLController implements Initializable {
     public FXMLController() {
         this.db = new DBConnector();
         this.app = new MainApp();
+//        this.initDB();
     }
 //    @FXML
 //    private Button createProductTable;
@@ -143,6 +144,8 @@ public class FXMLController implements Initializable {
     @FXML
     private void exportBNCButtonClickedHandler(ActionEvent event) throws IOException, InvalidFormatException, SQLException {
         FileChooser fc = new FileChooser();
+        fc.setSelectedExtensionFilter(new ExtensionFilter("Microsoft Excel", ".xlsx"));
+        fc.setInitialFileName("export.xlsx");
         File file = fc.showSaveDialog(app.getStage());
         
         if (file == null)
@@ -152,6 +155,12 @@ public class FXMLController implements Initializable {
         ExcelWriter ew = new ExcelWriter();
         ew.createSheet("default");
         ew.write(productToExport, file.getAbsolutePath());
+        
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("JPS Exceler");
+        alert.setHeaderText("Xuất file Excel BNC");
+        alert.setContentText("Đã xuất file thành công!");
+        alert.showAndWait();
     }
 //    @FXML
 //    private void createProductTableClickedHandler(ActionEvent event) throws SQLException {
@@ -181,7 +190,6 @@ public class FXMLController implements Initializable {
     @FXML
     private void synchronizeDataButtonClickedHandler(ActionEvent event) throws SQLException {
         System.out.println("Synchronize data");
-        DBConnector db = MainApp.dbConnector;
         boolean flag = true;
         for (KiotProduct p : kiotProduct) {
             if (!db.synchronizeProduct(p))
@@ -195,10 +203,11 @@ public class FXMLController implements Initializable {
     
         FileChooser fc = new FileChooser();
         fc.setTitle("Chọn file Excel");
+        fc.setSelectedExtensionFilter(new ExtensionFilter("Microsoft Excel", ".xlsx"));
         Stage primaryStage = app.getStage();
         File in = fc.showOpenDialog(primaryStage);
 //        
-        if(in == null)
+        if(in == null || !in.getAbsolutePath().contains(".xlsx"))
             return;
         
         Alert importConfirm = new Alert(AlertType.CONFIRMATION);
@@ -280,6 +289,7 @@ public class FXMLController implements Initializable {
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        initDB();
         productPhotoButton.setDisable(true);
         synchronizeDataButton.setDisable(true);
         imageTextField.textProperty().addListener(new ChangeListener<String>() {
@@ -392,6 +402,21 @@ public class FXMLController implements Initializable {
         addTableViewListener();
     }
     
+    private void initDB() {
+        if (db.checkTableExisted("products"))
+            return;
+        try {
+            db.createProductsTable();
+        } catch (SQLException ex) {
+            Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    /**
+     * Read excel file and set corresponding variable
+     * @param in
+     * @throws IOException
+     * @throws InvalidFormatException 
+     */
     public void readExcel(File in) throws IOException, InvalidFormatException {
         eReader = new ExcelReader(in);
         wb = eReader.getWorkbook();      
@@ -486,6 +511,8 @@ public class FXMLController implements Initializable {
                 // Check if there is any image of the product
                 if (isTouchableAvatar(p) || isTouchableImage(p)) {
                     buildImagePagination(p);
+                } else {
+                    imagePaginationVBox.getChildren().clear();
                 }
             }
         }
@@ -506,6 +533,11 @@ public class FXMLController implements Initializable {
         ArrayList<String> urls = makeUrlList(imageUrls, ",");
         int pageCount = urls.size();
         Image[] images = new Image[pageCount];
+        for (int i = 0; i < pageCount; i++) {
+            Image im = new Image(urls.get(i), 200, 0, true, true);
+            images[i] = im;
+        }
+        System.out.println(images.length);
         productImagePagination = new Pagination(pageCount, 0);
         productImagePagination.getStyleClass().add(Pagination.STYLE_CLASS_BULLET);
         
@@ -516,7 +548,7 @@ public class FXMLController implements Initializable {
                     return createProductImageSlideShow(pageIndex, images);
                 }
             });
-//        imagePaginationVBox.getChildren().clear();
+        imagePaginationVBox.getChildren().clear();
         imagePaginationVBox.getChildren().add(productImagePagination);
     }
     
@@ -536,10 +568,11 @@ public class FXMLController implements Initializable {
      * @return 
      */
     private ArrayList<String> makeUrlList(String urls, String separator) {
+        System.out.println(urls);
         ArrayList<String> results = new ArrayList<>();
         String[] tokens = urls.split(separator);
         results.addAll(Arrays.asList(tokens));
-        
+        System.out.println(results);
         return results;
     }
     /**

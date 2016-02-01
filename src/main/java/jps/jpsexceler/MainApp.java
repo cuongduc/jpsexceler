@@ -2,8 +2,9 @@ package jps.jpsexceler;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
-import static javafx.application.Application.launch;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
@@ -15,6 +16,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import jps.model.DBConnector;
 import jps.model.KiotProduct;
+import static javafx.application.Application.launch;
 
 
 public class MainApp extends Application {
@@ -22,27 +24,32 @@ public class MainApp extends Application {
     
     private Stage primaryStage;
     
-    public static DBConnector dbConnector;
+    public static DBConnector db;
     
     private ObservableList<Node> allChildren = FXCollections.observableArrayList();
     
-    // Singpleton
-//    private static MainApp instance = null;
     
     public MainApp() {
-        MainApp.dbConnector = new DBConnector();
+        MainApp.db = new DBConnector();
+        initProductsTable();
     }
     
-//    public static MainApp getInstance() {
-//        if (instance == null)
-//            instance = new MainApp();
-//        return instance;
-//    }
 
     public DBConnector getDbConnector() {
-        return dbConnector;
+        return db;
     }
     
+    /**
+     * Check if products table existed
+     * if not, create it
+     */
+    private void initProductsTable() {
+        try {
+                db.createProductsTable();
+        } catch (SQLException ex) {
+            Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     
     @Override
     public void start(Stage stage) throws SQLException {
@@ -51,6 +58,7 @@ public class MainApp extends Application {
         
         initRootLayout();
         this.primaryStage.show();
+        System.out.println(System.getProperty("user.home"));
     }
     
     private void initRootLayout() throws SQLException {
@@ -71,7 +79,7 @@ public class MainApp extends Application {
 
     private Node initDataTableView() throws SQLException {
         TableView<KiotProduct> tbKiotProduct = new TableView<>();
-        tbKiotProduct.setItems(MainApp.dbConnector.getAllProducts());   
+        tbKiotProduct.setItems(MainApp.db.getAllProducts());   
         return tbKiotProduct;
     }
 

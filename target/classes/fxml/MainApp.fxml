@@ -6,7 +6,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane fx:id="rootLayoutBorderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="920.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jps.jpsexceler.FXMLController">
+<BorderPane fx:id="rootLayoutBorderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="680.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jps.jpsexceler.FXMLController">
    <top>
       <VBox prefHeight="67.0" prefWidth="860.0" BorderPane.alignment="CENTER">
          <children>
@@ -61,7 +61,7 @@
                            <children>
                               <VBox>
                                  <children>
-                                    <ImageView id="product-avatar" fx:id="avatarImageView" fitHeight="170.0" fitWidth="287.0" pickOnBounds="true" preserveRatio="true" />
+                                    <VBox fx:id="imagePaginationVBox" alignment="CENTER" prefHeight="200.0" prefWidth="100.0" />
                                     <Button fx:id="productPhotoButton" mnemonicParsing="false" onAction="#productPhotoButtonClickedHandler" text="Hình ảnh ..." />
                                     <GridPane VBox.vgrow="ALWAYS">
                                       <columnConstraints>
